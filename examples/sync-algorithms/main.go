@@ -37,4 +37,18 @@ func main() {
 
 	fmt.Printf("\nWords: %v\n", words)
 	fmt.Printf("Uppercase: %v\n", result2)
+
+	// FlatMap example
+	fmt.Println("\n=== FlatMap Example ===")
+	numbers := []int{1, 2, 3}
+	iter3 := goiterators.NewIteratorFromSlice(numbers)
+	
+	// Each number generates itself and its double
+	flattened := goiterators.FlatMap(iter3, func(x int) []int {
+		return []int{x, x * 2}
+	})
+	
+	result3 := slices.Collect(flattened.Next)
+	fmt.Printf("Numbers: %v\n", numbers)
+	fmt.Printf("FlatMapped [x, x*2]: %v\n", result3)
 }

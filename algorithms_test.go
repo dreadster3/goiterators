@@ -270,3 +270,76 @@ func TestErrorPropagationOrder(t *testing.T) {
 	assert.Error(t, taken.Err())
 	assert.Equal(t, []int{2, 4}, result)
 }
+
+func TestFlatMap(t *testing.T) {
+	data := []int{1, 2, 3}
+	iter := goiterators.NewIteratorFromSlice(data)
+
+	// Each number produces itself and its double
+	flattened := goiterators.FlatMap(iter, func(x int) []int {
+		return []int{x, x * 2}
+	})
+
+	result := slices.Collect(flattened.Next)
+	expected := []int{1, 2, 2, 4, 3, 6}
+	assert.Equal(t, expected, result)
+	assert.NoError(t, flattened.Err())
+}
+
+func TestFlatMapEmpty(t *testing.T) {
+	data := []int{1, 2, 3}
+	iter := goiterators.NewIteratorFromSlice(data)
+
+	// Function returns empty slice for all items
+	flattened := goiterators.FlatMap(iter, func(x int) []int {
+		return []int{}
+	})
+
+	result := slices.Collect(flattened.Next)
+	assert.Empty(t, result)
+	assert.NoError(t, flattened.Err())
+}
+
+func TestFlatMapWithStrings(t *testing.T) {
+	data := []string{"ab", "cd"}
+	iter := goiterators.NewIteratorFromSlice(data)
+
+	// Split each string into characters
+	flattened := goiterators.FlatMap(iter, func(s string) []string {
+		result := make([]string, len(s))
+		for i, r := range s {
+			result[i] = string(r)
+		}
+		return result
+	})
+
+	result := slices.Collect(flattened.Next)
+	expected := []string{"a", "b", "c", "d"}
+	assert.Equal(t, expected, result)
+	assert.NoError(t, flattened.Err())
+}
+
+func TestFlatMapWithError(t *testing.T) {
+	// Create iterator with error
+	next := func(yield func(int, error) bool) {
+		for i := 1; i <= 3; i++ {
+			var err error
+			if i == 2 {
+				err = errors.New("error at 2")
+			}
+			if !yield(i, err) {
+				return
+			}
+		}
+	}
+
+	iter := goiterators.NewIteratorErr(next)
+	flattened := goiterators.FlatMap(iter, func(x int) []int {
+		return []int{x, x * 10}
+	})
+
+	result := slices.Collect(flattened.Next)
+	expected := []int{1, 10} // Only first item processed before error
+	assert.Equal(t, expected, result)
+	assert.Error(t, flattened.Err())
+}

@@ -5,7 +5,7 @@ A powerful and flexible iterator library for Go, providing both synchronous and 
 ## Features
 
 - **Generic Iterator Interface**: Type-safe iterators using Go generics
-- **Synchronous Algorithms**: Map, Filter, Take operations
+- **Synchronous Algorithms**: Map, Filter, Take, FlatMap operations
 - **Asynchronous Processing**: Parallel execution with MapAsync, FilterAsync, FlatMapAsync
 - **Error Propagation**: Comprehensive error handling throughout iterator chains
 - **Channel-based Async**: Efficient async processing using Go channels and goroutines
@@ -99,6 +99,13 @@ Take at most n elements from the iterator.
 func Take[T any](iter Iterator[T], n int) Iterator[T]
 ```
 
+#### FlatMap
+Transform each element into multiple results and flatten them.
+
+```go
+func FlatMap[T, U any](iter Iterator[T], fn func(T) []U) Iterator[U]
+```
+
 ### Asynchronous Algorithms
 
 #### MapAsync
@@ -158,6 +165,24 @@ result := goiterators.Map(
 )
 
 // result: [4, 8, 12] (from 2, 4, 6 -> doubled)
+```
+
+### FlatMap Example
+
+```go
+data := []int{1, 2, 3}
+iter := goiterators.NewIteratorFromSlice(data)
+
+// Each number produces itself and its double
+flattened := goiterators.FlatMap(iter, func(x int) []int {
+    return []int{x, x * 2}
+})
+
+var result []int
+for item := range flattened.Next {
+    result = append(result, item)
+}
+// result: [1, 2, 2, 4, 3, 6]
 ```
 
 ### Async Processing

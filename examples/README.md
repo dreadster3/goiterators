@@ -17,6 +17,9 @@ cd examples/async-algorithms && go run main.go
 # Mixed sync/async operations
 cd examples/mixed-operations && go run main.go
 
+# Indexed operations
+cd examples/indexed-operations && go run main.go
+
 # Error handling patterns
 cd examples/error-handling && go run main.go
 ```
@@ -34,6 +37,9 @@ Parallel processing with `MapAsync`, `FilterAsync`, and `FlatMapAsync`.
 
 ### 🔀 [mixed-operations/](mixed-operations/)
 **Key Feature**: Seamlessly mixing sync and async operations in the same chain.
+
+### 🔢 [indexed-operations/](indexed-operations/)
+Indexed versions of all algorithms with access to element positions.
 
 ### ⚠️ [error-handling/](error-handling/)
 Comprehensive error propagation and graceful handling patterns.
@@ -66,11 +72,21 @@ iter := goiterators.NewIteratorErr(errorFunction)
 goiterators.Map(iter, func(x int) int { return x * 2 })
 goiterators.Filter(iter, func(x int) bool { return x > 0 })
 goiterators.Take(iter, 5)
+goiterators.FlatMap(iter, func(x int) []int { return []int{x, x*2} })
+
+// Transform with index (sync)
+goiterators.IMap(iter, func(idx int, x int) int { return x * idx })
+goiterators.IFilter(iter, func(idx int, x int) bool { return idx%2 == 0 })
 
 // Transform (async)
 goiterators.MapAsync(iter, expensiveFunc)
 goiterators.FilterAsync(iter, expensivePredicate)
 goiterators.FlatMapAsync(iter, expandFunc)
+
+// Transform with index (async)
+goiterators.IMapAsync(iter, expensiveFuncWithIndex)
+goiterators.IFilterAsync(iter, expensivePredicateWithIndex)
+goiterators.IFlatMapAsync(iter, expandFuncWithIndex)
 
 // Collect results
 result := slices.Collect(iter.Next)

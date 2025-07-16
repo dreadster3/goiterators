@@ -7,6 +7,7 @@ This example demonstrates the core synchronous transformation algorithms.
 - `Map()` - Transform each element
 - `Filter()` - Keep elements matching a condition
 - `Take()` - Limit the number of elements
+- `FlatMap()` - Transform each element into multiple results
 - Chaining operations together
 - Working with different data types
 
