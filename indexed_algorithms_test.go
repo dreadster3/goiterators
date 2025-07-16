@@ -41,7 +41,6 @@ func TestIFilter(t *testing.T) {
 	assert.NoError(t, result.Err())
 }
 
-
 func TestIMapAsync(t *testing.T) {
 	data := []int{1, 2, 3}
 	iter := goiterators.NewIteratorFromSlice(data)

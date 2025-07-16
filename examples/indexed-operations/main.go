@@ -26,7 +26,7 @@ func main() {
 	// IFilter: Filter based on index
 	fmt.Println("\n=== Index-based filtering ===")
 	iter2 := goiterators.NewIteratorFromSlice(data)
-	
+
 	evenIndices := goiterators.IFilter(iter2, func(idx int, item string) bool {
 		return idx%2 == 0 // Keep items at even indices
 	})
@@ -37,7 +37,7 @@ func main() {
 	// Regular Take for comparison
 	fmt.Println("\n=== Regular Take ===")
 	iter3 := goiterators.NewIteratorFromSlice(data)
-	
+
 	first3 := goiterators.Take(iter3, 3)
 
 	result3 := slices.Collect(first3.Next)
@@ -56,7 +56,7 @@ func main() {
 
 	result4 := slices.Collect(asyncResult.Next)
 	elapsed := time.Since(start)
-	
+
 	slices.Sort(result4) // Async results may be out of order
 	fmt.Printf("Async results: %v\n", result4)
 	fmt.Printf("Time: %v (parallel processing)\n", elapsed)
@@ -64,7 +64,7 @@ func main() {
 	// Complex chaining with indexed operations
 	fmt.Println("\n=== Chained indexed operations ===")
 	iter5 := goiterators.NewIteratorFromSlice([]int{10, 15, 20, 25, 30, 35, 40})
-	
+
 	chained := goiterators.IMap(
 		goiterators.IFilter(iter5, func(idx int, item int) bool {
 			return idx > 1 && item%5 == 0 // Skip first 2, keep multiples of 5

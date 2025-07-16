@@ -20,6 +20,9 @@ cd examples/mixed-operations && go run main.go
 # Indexed operations
 cd examples/indexed-operations && go run main.go
 
+# Context cancellation
+cd examples/context-cancellation && go run main.go
+
 # Error handling patterns
 cd examples/error-handling && go run main.go
 ```
@@ -40,6 +43,9 @@ Parallel processing with `MapAsync`, `FilterAsync`, and `FlatMapAsync`.
 
 ### 🔢 [indexed-operations/](indexed-operations/)
 Indexed versions of all algorithms with access to element positions.
+
+### 🚫 [context-cancellation/](context-cancellation/)
+Context cancellation and timeout support for async operations.
 
 ### ⚠️ [error-handling/](error-handling/)
 Comprehensive error propagation and graceful handling patterns.
