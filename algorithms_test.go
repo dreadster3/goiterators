@@ -2,6 +2,7 @@ package goiterators_test
 
 import (
 	"errors"
+	"iter"
 	"slices"
 	"testing"
 
@@ -273,11 +274,11 @@ func TestErrorPropagationOrder(t *testing.T) {
 
 func TestFlatMap(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
 	// Each number produces itself and its double
-	flattened := goiterators.FlatMap(iter, func(x int) []int {
-		return []int{x, x * 2}
+	flattened := goiterators.FlatMap(iterator, func(x int) iter.Seq[int] {
+		return slices.Values([]int{x, x * 2})
 	})
 
 	result := slices.Collect(flattened.Next)
@@ -288,11 +289,11 @@ func TestFlatMap(t *testing.T) {
 
 func TestFlatMapEmpty(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
-	// Function returns empty slice for all items
-	flattened := goiterators.FlatMap(iter, func(x int) []int {
-		return []int{}
+	// Function returns empty sequence for all items
+	flattened := goiterators.FlatMap(iterator, func(x int) iter.Seq[int] {
+		return slices.Values([]int{})
 	})
 
 	result := slices.Collect(flattened.Next)
@@ -302,15 +303,15 @@ func TestFlatMapEmpty(t *testing.T) {
 
 func TestFlatMapWithStrings(t *testing.T) {
 	data := []string{"ab", "cd"}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
 	// Split each string into characters
-	flattened := goiterators.FlatMap(iter, func(s string) []string {
-		result := make([]string, len(s))
+	flattened := goiterators.FlatMap(iterator, func(s string) iter.Seq[string] {
+		chars := make([]string, len(s))
 		for i, r := range s {
-			result[i] = string(r)
+			chars[i] = string(r)
 		}
-		return result
+		return slices.Values(chars)
 	})
 
 	result := slices.Collect(flattened.Next)
@@ -333,9 +334,9 @@ func TestFlatMapWithError(t *testing.T) {
 		}
 	}
 
-	iter := goiterators.NewIteratorErr(next)
-	flattened := goiterators.FlatMap(iter, func(x int) []int {
-		return []int{x, x * 10}
+	iterator := goiterators.NewIteratorErr(next)
+	flattened := goiterators.FlatMap(iterator, func(x int) iter.Seq[int] {
+		return slices.Values([]int{x, x * 10})
 	})
 
 	result := slices.Collect(flattened.Next)

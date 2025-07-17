@@ -2,6 +2,7 @@ package goiterators
 
 import (
 	"context"
+	"iter"
 	"sync"
 )
 
@@ -137,7 +138,7 @@ func IFilterAsync[T any](iter Iterator[T], fn func(int, T) bool) Iterator[T] {
 }
 
 // IFlatMapAsyncCtx transforms each item into multiple results with index in parallel with context cancellation
-func IFlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) ([]U, error)) Iterator[U] {
+func IFlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) (iter.Seq[U], error)) Iterator[U] {
 	return processAsync(ctx, iter, func(ctx context.Context, idx int, item T, ch chan<- Result[U]) {
 		select {
 		case <-ctx.Done():
@@ -147,7 +148,7 @@ func IFlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(c
 			if err != nil {
 				ch <- Result[U]{Value: *new(U), Err: err}
 			} else {
-				for _, result := range results {
+				for result := range results {
 					select {
 					case <-ctx.Done():
 						ch <- Result[U]{Value: *new(U), Err: ctx.Err()}
@@ -161,22 +162,22 @@ func IFlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(c
 }
 
 // FlatMapAsync transforms each item into multiple results in parallel
-func FlatMapAsync[T, U any](iter Iterator[T], fn func(T) []U) Iterator[U] {
-	return IFlatMapAsync(iter, func(_ int, item T) []U {
+func FlatMapAsync[T, U any](iterator Iterator[T], fn func(T) iter.Seq[U]) Iterator[U] {
+	return IFlatMapAsync(iterator, func(_ int, item T) iter.Seq[U] {
 		return fn(item)
 	})
 }
 
 // IFlatMapAsync transforms each item into multiple results with index in parallel
-func IFlatMapAsync[T, U any](iter Iterator[T], fn func(int, T) []U) Iterator[U] {
-	return IFlatMapAsyncCtx(context.Background(), iter, func(ctx context.Context, i int, t T) ([]U, error) {
+func IFlatMapAsync[T, U any](iterator Iterator[T], fn func(int, T) iter.Seq[U]) Iterator[U] {
+	return IFlatMapAsyncCtx(context.Background(), iterator, func(ctx context.Context, i int, t T) (iter.Seq[U], error) {
 		return fn(i, t), nil
 	})
 }
 
 // FlatMapAsyncCtx transforms each item into multiple results in parallel with context cancellation
-func FlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(context.Context, T) ([]U, error)) Iterator[U] {
-	return IFlatMapAsyncCtx(ctx, iter, func(ctx context.Context, i int, t T) ([]U, error) {
+func FlatMapAsyncCtx[T, U any](ctx context.Context, iterator Iterator[T], fn func(context.Context, T) (iter.Seq[U], error)) Iterator[U] {
+	return IFlatMapAsyncCtx(ctx, iterator, func(ctx context.Context, i int, t T) (iter.Seq[U], error) {
 		return fn(ctx, t)
 	})
 }

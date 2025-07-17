@@ -78,7 +78,7 @@ iter := goiterators.NewIteratorErr(errorFunction)
 goiterators.Map(iter, func(x int) int { return x * 2 })
 goiterators.Filter(iter, func(x int) bool { return x > 0 })
 goiterators.Take(iter, 5)
-goiterators.FlatMap(iter, func(x int) []int { return []int{x, x*2} })
+goiterators.FlatMap(iter, func(x int) iter.Seq[int] { return slices.Values([]int{x, x*2}) })
 
 // Transform with index (sync)
 goiterators.IMap(iter, func(idx int, x int) int { return x * idx })

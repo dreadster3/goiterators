@@ -1,5 +1,7 @@
 package goiterators
 
+import "iter"
+
 // Map transforms each item using the provided function
 func Map[T any, U any](iter Iterator[T], fn func(T) U) Iterator[U] {
 	return newIterator(func(self *iterator[U], yield func(int, U) bool) {
@@ -85,12 +87,12 @@ func Take[T any](iter Iterator[T], n int) Iterator[T] {
 	})
 }
 
-// FlatMap transforms each item into multiple results
-func FlatMap[T, U any](iter Iterator[T], fn func(T) []U) Iterator[U] {
+// FlatMap transforms each item into multiple results using iter.Seq
+func FlatMap[T, U any](iter Iterator[T], fn func(T) iter.Seq[U]) Iterator[U] {
 	return newIterator(func(self *iterator[U], yield func(int, U) bool) {
 		outputIdx := 0
 		for _, item := range iter.INext {
-			for _, result := range fn(item) {
+			for result := range fn(item) {
 				if !yield(outputIdx, result) {
 					return
 				}

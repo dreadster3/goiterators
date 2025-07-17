@@ -3,6 +3,7 @@ package goiterators_test
 import (
 	"errors"
 	"fmt"
+	"iter"
 	"slices"
 	"testing"
 	"time"
@@ -78,14 +79,14 @@ func TestIFilterAsync(t *testing.T) {
 
 func TestIFlatMapAsync(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
-	result := goiterators.IFlatMapAsync(iter, func(idx int, item int) []string {
+	result := goiterators.IFlatMapAsync(iterator, func(idx int, item int) iter.Seq[string] {
 		time.Sleep(10 * time.Millisecond)
-		return []string{
+		return slices.Values([]string{
 			fmt.Sprintf("idx%d", idx),
 			fmt.Sprintf("val%d", item),
-		}
+		})
 	})
 
 	output := slices.Collect(result.Next)

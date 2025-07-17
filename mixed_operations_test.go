@@ -2,6 +2,7 @@ package goiterators_test
 
 import (
 	"errors"
+	"iter"
 	"slices"
 	"testing"
 	"time"
@@ -207,15 +208,15 @@ func TestAsyncSyncAsyncChain(t *testing.T) {
 
 func TestMixedOperationsFlatMap(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
 	// sync filter → async flatmap → sync filter
 	result := goiterators.Filter(
 		goiterators.FlatMapAsync(
-			goiterators.Filter(iter, func(x int) bool { return x > 1 }),
-			func(x int) []int {
+			goiterators.Filter(iterator, func(x int) bool { return x > 1 }),
+			func(x int) iter.Seq[int] {
 				time.Sleep(10 * time.Millisecond)
-				return []int{x, x * 10}
+				return slices.Values([]int{x, x * 10})
 			},
 		),
 		func(x int) bool { return x < 25 },

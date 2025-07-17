@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"slices"
 	"sync"
 	"testing"
@@ -153,12 +154,12 @@ func TestIFilterAsyncCtx(t *testing.T) {
 
 func TestFlatMapAsyncCtx(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 	ctx := context.Background()
 
-	flattened := goiterators.FlatMapAsyncCtx(ctx, iter, func(ctx context.Context, x int) ([]int, error) {
+	flattened := goiterators.FlatMapAsyncCtx(ctx, iterator, func(ctx context.Context, x int) (iter.Seq[int], error) {
 		time.Sleep(10 * time.Millisecond)
-		return []int{x, x * 10}, nil
+		return slices.Values([]int{x, x * 10}), nil
 	})
 
 	result := slices.Collect(flattened.Next)
@@ -171,12 +172,12 @@ func TestFlatMapAsyncCtx(t *testing.T) {
 
 func TestIFlatMapAsyncCtx(t *testing.T) {
 	data := []int{1, 2, 3}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 	ctx := context.Background()
 
-	flattened := goiterators.IFlatMapAsyncCtx(ctx, iter, func(ctx context.Context, idx int, x int) ([]string, error) {
+	flattened := goiterators.IFlatMapAsyncCtx(ctx, iterator, func(ctx context.Context, idx int, x int) (iter.Seq[string], error) {
 		time.Sleep(10 * time.Millisecond)
-		return []string{fmt.Sprintf("idx%d", idx), fmt.Sprintf("val%d", x)}, nil
+		return slices.Values([]string{fmt.Sprintf("idx%d", idx), fmt.Sprintf("val%d", x)}), nil
 	})
 
 	result := slices.Collect(flattened.Next)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"iter"
 	"slices"
 	"strings"
 
@@ -12,12 +13,12 @@ func main() {
 	fmt.Println("=== Synchronous Algorithms ===")
 
 	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	iter := goiterators.NewIteratorFromSlice(data)
+	iterator := goiterators.NewIteratorFromSlice(data)
 
 	// Chain operations: filter evens, take first 3, then double each
 	result := goiterators.Map(
 		goiterators.Take(
-			goiterators.Filter(iter, func(x int) bool { return x%2 == 0 }),
+			goiterators.Filter(iterator, func(x int) bool { return x%2 == 0 }),
 			3,
 		),
 		func(x int) int { return x * 2 },
@@ -30,9 +31,9 @@ func main() {
 
 	// String transformation example
 	words := []string{"hello", "world", "go"}
-	iter2 := goiterators.NewIteratorFromSlice(words)
+	iterator2 := goiterators.NewIteratorFromSlice(words)
 
-	uppercase := goiterators.Map(iter2, strings.ToUpper)
+	uppercase := goiterators.Map(iterator2, strings.ToUpper)
 	result2 := slices.Collect(uppercase.Next)
 
 	fmt.Printf("\nWords: %v\n", words)
@@ -41,11 +42,11 @@ func main() {
 	// FlatMap example
 	fmt.Println("\n=== FlatMap Example ===")
 	numbers := []int{1, 2, 3}
-	iter3 := goiterators.NewIteratorFromSlice(numbers)
+	iterator3 := goiterators.NewIteratorFromSlice(numbers)
 
 	// Each number generates itself and its double
-	flattened := goiterators.FlatMap(iter3, func(x int) []int {
-		return []int{x, x * 2}
+	flattened := goiterators.FlatMap(iterator3, func(x int) iter.Seq[int] {
+		return slices.Values([]int{x, x * 2})
 	})
 
 	result3 := slices.Collect(flattened.Next)

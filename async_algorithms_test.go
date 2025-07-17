@@ -2,6 +2,7 @@ package goiterators_test
 
 import (
 	"errors"
+	"iter"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -380,9 +381,9 @@ func TestFlatMapAsync(t *testing.T) {
 	iterator := goiterators.NewIteratorFromSlice(data)
 
 	// Each number produces multiple results
-	flatMapped := goiterators.FlatMapAsync(iterator, func(item int) []int {
+	flatMapped := goiterators.FlatMapAsync(iterator, func(item int) iter.Seq[int] {
 		time.Sleep(10 * time.Millisecond)
-		return []int{item, item * 10}
+		return slices.Values([]int{item, item * 10})
 	})
 
 	result := slices.Collect(flatMapped.Next)

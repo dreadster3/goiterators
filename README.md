@@ -31,13 +31,13 @@ func main() {
     // Create an iterator from a slice
     data := []int{1, 2, 3, 4, 5}
     iter := goiterators.NewIteratorFromSlice(data)
-    
+
     // Chain operations
     result := goiterators.Map(
         goiterators.Filter(iter, func(x int) bool { return x%2 == 0 }),
         func(x int) int { return x * 2 },
     )
-    
+
     // Collect results
     for item := range result.Next {
         fmt.Println(item) // Prints: 4, 8
@@ -79,6 +79,7 @@ type Result[T any] struct {
 ### Synchronous Algorithms
 
 #### Map
+
 Transform each element using a function.
 
 ```go
@@ -86,6 +87,7 @@ func Map[T, U any](iter Iterator[T], fn func(T) U) Iterator[U]
 ```
 
 #### Filter
+
 Keep only elements that satisfy a predicate.
 
 ```go
@@ -93,6 +95,7 @@ func Filter[T any](iter Iterator[T], fn func(T) bool) Iterator[T]
 ```
 
 #### Take
+
 Take at most n elements from the iterator.
 
 ```go
@@ -100,15 +103,17 @@ func Take[T any](iter Iterator[T], n int) Iterator[T]
 ```
 
 #### FlatMap
+
 Transform each element into multiple results and flatten them.
 
 ```go
-func FlatMap[T, U any](iter Iterator[T], fn func(T) []U) Iterator[U]
+func FlatMap[T, U any](iter Iterator[T], fn func(T) iter.Seq[U]) Iterator[U]
 ```
 
 ### Asynchronous Algorithms
 
 #### MapAsync
+
 Transform elements in parallel using goroutines.
 
 ```go
@@ -116,6 +121,7 @@ func MapAsync[T, U any](iter Iterator[T], fn func(T) U) Iterator[U]
 ```
 
 #### FilterAsync
+
 Filter elements in parallel.
 
 ```go
@@ -123,10 +129,11 @@ func FilterAsync[T any](iter Iterator[T], fn func(T) bool) Iterator[T]
 ```
 
 #### FlatMapAsync
+
 Transform each element into multiple results in parallel.
 
 ```go
-func FlatMapAsync[T, U any](iter Iterator[T], fn func(T) []U) Iterator[U]
+func FlatMapAsync[T, U any](iter Iterator[T], fn func(T) iter.Seq[U]) Iterator[U]
 ```
 
 ## Examples
@@ -170,12 +177,18 @@ result := goiterators.Map(
 ### FlatMap Example
 
 ```go
+import (
+    "iter"
+    "slices"
+    "github.com/dreadster3/goiterators"
+)
+
 data := []int{1, 2, 3}
 iter := goiterators.NewIteratorFromSlice(data)
 
 // Each number produces itself and its double
-flattened := goiterators.FlatMap(iter, func(x int) []int {
-    return []int{x, x * 2}
+flattened := goiterators.FlatMap(iter, func(x int) iter.Seq[int] {
+    return slices.Values([]int{x, x * 2})
 })
 
 var result []int
@@ -255,6 +268,7 @@ go test ./...
 ```
 
 The library includes extensive tests covering:
+
 - Basic functionality
 - Error propagation
 - Async processing and parallelism
@@ -268,6 +282,3 @@ The library includes extensive tests covering:
 4. Ensure all tests pass
 5. Submit a pull request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
