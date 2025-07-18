@@ -5,8 +5,8 @@ A powerful and flexible iterator library for Go, providing both synchronous and 
 ## Features
 
 - **Generic Iterator Interface**: Type-safe iterators using Go generics
-- **Synchronous Algorithms**: Map, Filter, Take, FlatMap operations
-- **Asynchronous Processing**: Parallel execution with MapAsync, FilterAsync, FlatMapAsync
+- **Synchronous Algorithms**: Map, Filter, Take, FlatMap, ForEach operations
+- **Asynchronous Processing**: Parallel execution with MapAsync, FilterAsync, FlatMapAsync, ForEachAsync
 - **Error Propagation**: Comprehensive error handling throughout iterator chains
 - **Channel-based Async**: Efficient async processing using Go channels and goroutines
 - **Easy Integration**: Works seamlessly with Go's standard library
@@ -110,6 +110,14 @@ Transform each element into multiple results and flatten them.
 func FlatMap[T, U any](iter Iterator[T], fn func(T) iter.Seq[U]) Iterator[U]
 ```
 
+#### ForEach
+
+Apply a function to each element in the iterator. The function can return an error to stop iteration early.
+
+```go
+func ForEach[T any](iter Iterator[T], fn func(T) error) error
+```
+
 ### Asynchronous Algorithms
 
 #### MapAsync
@@ -135,6 +143,16 @@ Transform each element into multiple results in parallel.
 ```go
 func FlatMapAsync[T, U any](iter Iterator[T], fn func(T) iter.Seq[U]) Iterator[U]
 ```
+
+#### ForEachAsync
+
+Apply a function to each element in parallel. The function can return an error to stop iteration early.
+
+```go
+func ForEachAsync[T any](iter Iterator[T], fn func(T) error) error
+```
+
+**Note:** The async ForEach functions process elements in parallel and return when all processing is complete or when an error occurs.
 
 ## Examples
 
@@ -172,30 +190,6 @@ result := goiterators.Map(
 )
 
 // result: [4, 8, 12] (from 2, 4, 6 -> doubled)
-```
-
-### FlatMap Example
-
-```go
-import (
-    "iter"
-    "slices"
-    "github.com/dreadster3/goiterators"
-)
-
-data := []int{1, 2, 3}
-iter := goiterators.NewIteratorFromSlice(data)
-
-// Each number produces itself and its double
-flattened := goiterators.FlatMap(iter, func(x int) iter.Seq[int] {
-    return slices.Values([]int{x, x * 2})
-})
-
-var result []int
-for item := range flattened.Next {
-    result = append(result, item)
-}
-// result: [1, 2, 2, 4, 3, 6]
 ```
 
 ### Async Processing
@@ -281,4 +275,3 @@ The library includes extensive tests covering:
 3. Add tests for new functionality
 4. Ensure all tests pass
 5. Submit a pull request
-

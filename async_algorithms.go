@@ -3,6 +3,7 @@ package goiterators
 import (
 	"context"
 	"iter"
+	"slices"
 	"sync"
 )
 
@@ -35,7 +36,13 @@ func processAsync[T, U any](ctx context.Context, iter Iterator[T], worker func(c
 			wg.Add(1)
 			go func(idx int, item T) {
 				defer wg.Done()
-				worker(ctx, idx, item, channel)
+				select {
+				case <-ctx.Done():
+					channel <- Result[U]{Value: *new(U), Err: ctx.Err()}
+				default:
+					worker(ctx, idx, item, channel)
+
+				}
 			}(idx, item)
 		}
 
@@ -68,13 +75,8 @@ func processAsync[T, U any](ctx context.Context, iter Iterator[T], worker func(c
 // IMapAsyncCtx transforms each item using the provided function with index in parallel with context cancellation
 func IMapAsyncCtx[T any, U any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) (U, error)) Iterator[U] {
 	return processAsync(ctx, iter, func(ctx context.Context, idx int, item T, ch chan<- Result[U]) {
-		select {
-		case <-ctx.Done():
-			ch <- Result[U]{Value: *new(U), Err: ctx.Err()}
-		default:
-			result, err := fn(ctx, idx, item)
-			ch <- Result[U]{Value: result, Err: err}
-		}
+		result, err := fn(ctx, idx, item)
+		ch <- Result[U]{Value: result, Err: err}
 	})
 }
 
@@ -102,16 +104,11 @@ func MapAsyncCtx[T any, U any](ctx context.Context, iter Iterator[T], fn func(co
 // IFilterAsyncCtx returns only items that satisfy the predicate function with index in parallel with context cancellation
 func IFilterAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) (bool, error)) Iterator[T] {
 	return processAsync(ctx, iter, func(ctx context.Context, idx int, item T, ch chan<- Result[T]) {
-		select {
-		case <-ctx.Done():
-			ch <- Result[T]{Value: *new(T), Err: ctx.Err()}
-		default:
-			match, err := fn(ctx, idx, item)
-			if err != nil {
-				ch <- Result[T]{Value: *new(T), Err: err}
-			} else if match {
-				ch <- Result[T]{Value: item, Err: nil}
-			}
+		match, err := fn(ctx, idx, item)
+		if err != nil {
+			ch <- Result[T]{Value: *new(T), Err: err}
+		} else if match {
+			ch <- Result[T]{Value: item, Err: nil}
 		}
 	})
 }
@@ -140,21 +137,16 @@ func IFilterAsync[T any](iter Iterator[T], fn func(int, T) bool) Iterator[T] {
 // IFlatMapAsyncCtx transforms each item into multiple results with index in parallel with context cancellation
 func IFlatMapAsyncCtx[T, U any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) (iter.Seq[U], error)) Iterator[U] {
 	return processAsync(ctx, iter, func(ctx context.Context, idx int, item T, ch chan<- Result[U]) {
-		select {
-		case <-ctx.Done():
-			ch <- Result[U]{Value: *new(U), Err: ctx.Err()}
-		default:
-			results, err := fn(ctx, idx, item)
-			if err != nil {
-				ch <- Result[U]{Value: *new(U), Err: err}
-			} else {
-				for result := range results {
-					select {
-					case <-ctx.Done():
-						ch <- Result[U]{Value: *new(U), Err: ctx.Err()}
-						return
-					case ch <- Result[U]{Value: result, Err: nil}:
-					}
+		results, err := fn(ctx, idx, item)
+		if err != nil {
+			ch <- Result[U]{Value: *new(U), Err: err}
+		} else {
+			for result := range results {
+				select {
+				case <-ctx.Done():
+					ch <- Result[U]{Value: *new(U), Err: ctx.Err()}
+					return
+				case ch <- Result[U]{Value: result, Err: nil}:
 				}
 			}
 		}
@@ -179,5 +171,37 @@ func IFlatMapAsync[T, U any](iterator Iterator[T], fn func(int, T) iter.Seq[U]) 
 func FlatMapAsyncCtx[T, U any](ctx context.Context, iterator Iterator[T], fn func(context.Context, T) (iter.Seq[U], error)) Iterator[U] {
 	return IFlatMapAsyncCtx(ctx, iterator, func(ctx context.Context, i int, t T) (iter.Seq[U], error) {
 		return fn(ctx, t)
+	})
+}
+
+// IForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
+func IForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) error) error {
+	processIterator := processAsync(ctx, iter, func(ctx context.Context, i int, t T, c chan<- Result[struct{}]) {
+		c <- Result[struct{}]{Value: struct{}{}, Err: fn(ctx, i, t)}
+	})
+
+	_ = slices.Collect(processIterator.Next)
+
+	return processIterator.Err()
+}
+
+// IForEachAsync applies the function to each item with index in parallel
+func IForEachAsync[T any](iter Iterator[T], fn func(int, T) error) error {
+	return IForEachAsyncCtx(context.Background(), iter, func(_ context.Context, i int, t T) error {
+		return fn(i, t)
+	})
+}
+
+// ForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
+func ForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, T) error) error {
+	return IForEachAsyncCtx(ctx, iter, func(ctx context.Context, i int, t T) error {
+		return fn(ctx, t)
+	})
+}
+
+// ForEachAsync applies the function to each item with index in parallel
+func ForEachAsync[T any](iter Iterator[T], fn func(T) error) error {
+	return ForEachAsyncCtx(context.Background(), iter, func(_ context.Context, t T) error {
+		return fn(t)
 	})
 }
