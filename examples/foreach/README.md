@@ -38,6 +38,14 @@ go run main.go
 - Shows how ForEach works at the end of a processing chain
 - Demonstrates the composition of filter, take, and forEach operations
 
+### 7. Early Termination (Sync)
+- Shows how to stop iteration early by returning an error from the function
+- Demonstrates controlled stopping based on conditions
+
+### 8. Early Termination (Async)
+- Shows how to stop async iteration early by returning an error
+- Demonstrates that early termination works with parallel processing
+
 ## Key Points
 
 - **ForEach vs Map**: ForEach is for side effects, Map is for transformations

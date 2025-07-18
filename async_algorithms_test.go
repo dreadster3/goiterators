@@ -536,3 +536,66 @@ func TestForEachAsyncParallelism(t *testing.T) {
 	// Should have had multiple concurrent executions
 	assert.Greater(t, atomic.LoadInt64(&maxConcurrent), int64(1), "Expected parallel execution")
 }
+
+func TestForEachAsyncEarlyTermination(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []int
+
+	err := goiterators.ForEachAsync(iterator, func(item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, item)
+		mu.Unlock()
+		
+		if item == 3 {
+			return errors.New("stopping at 3")
+		}
+		return nil
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, "stopping at 3", err.Error())
+	// Due to parallel processing, we might get different numbers of results
+	// but we should get at least one result and it should include 3
+	assert.NotEmpty(t, result)
+	assert.Contains(t, result, 3) // Should contain the item that triggered the error
+}
+
+func TestIForEachAsyncEarlyTermination(t *testing.T) {
+	data := []int{10, 20, 30, 40, 50}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []string
+
+	err := goiterators.IForEachAsync(iterator, func(idx int, item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		mu.Unlock()
+		
+		if idx == 2 {
+			return errors.New("stopping at index 2")
+		}
+		return nil
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, "stopping at index 2", err.Error())
+	// Due to parallel processing, we might get different numbers of results
+	// but we should get at least one result and it should include the error-triggering item
+	assert.NotEmpty(t, result)
+	
+	// Check that the error-triggering item is in the results
+	found := false
+	for _, res := range result {
+		if res == "idx:2,val:30" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "Should contain the item that triggered the error")
+}

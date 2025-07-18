@@ -110,5 +110,40 @@ func main() {
 		log.Printf("Error in chained ForEach: %v", err)
 	}
 
+	// Early termination example
+	fmt.Println("\n7. Early termination - Stop processing when condition is met:")
+	terminationData := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	iter7 := goiterators.NewIteratorFromSlice(terminationData)
+	
+	err = goiterators.ForEach(iter7, func(x int) error {
+		fmt.Printf("Processing: %d\n", x)
+		if x == 5 {
+			return fmt.Errorf("stopping early at %d", x)
+		}
+		return nil
+	})
+	
+	if err != nil {
+		fmt.Printf("Stopped with error: %v\n", err)
+	}
+	
+	// Early termination with async
+	fmt.Println("\n8. Early termination (async) - Stop processing when condition is met:")
+	terminationData2 := []int{1, 2, 3, 4, 5}
+	iter8 := goiterators.NewIteratorFromSlice(terminationData2)
+	
+	err = goiterators.ForEachAsync(iter8, func(x int) error {
+		time.Sleep(20 * time.Millisecond)
+		fmt.Printf("Processing (async): %d\n", x)
+		if x == 3 {
+			return fmt.Errorf("stopping early at %d", x)
+		}
+		return nil
+	})
+	
+	if err != nil {
+		fmt.Printf("Async stopped with error: %v\n", err)
+	}
+
 	fmt.Println("\n=== Examples completed successfully! ===")
 }

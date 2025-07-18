@@ -425,3 +425,41 @@ func TestIForEachWithError(t *testing.T) {
 	assert.Equal(t, expected, result)
 	assert.Error(t, err)
 }
+
+func TestForEachEarlyTermination(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var result []int
+	err := goiterators.ForEach(iterator, func(item int) error {
+		result = append(result, item)
+		if item == 3 {
+			return errors.New("stopping at 3")
+		}
+		return nil
+	})
+
+	expected := []int{1, 2, 3} // Should stop after processing 3
+	assert.Equal(t, expected, result)
+	assert.Error(t, err)
+	assert.Equal(t, "stopping at 3", err.Error())
+}
+
+func TestIForEachEarlyTermination(t *testing.T) {
+	data := []int{10, 20, 30, 40, 50}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var result []string
+	err := goiterators.IForEach(iterator, func(idx int, item int) error {
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		if idx == 2 {
+			return errors.New("stopping at index 2")
+		}
+		return nil
+	})
+
+	expected := []string{"idx:0,val:10", "idx:1,val:20", "idx:2,val:30"} // Should stop after index 2
+	assert.Equal(t, expected, result)
+	assert.Error(t, err)
+	assert.Equal(t, "stopping at index 2", err.Error())
+}
