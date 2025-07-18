@@ -403,7 +403,7 @@ func TestForEachAsync(t *testing.T) {
 	var result []int
 
 	// Use ForEachAsync directly
-	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+	err := goiterators.ForEachAsync(iterator, func(item int) error {
 		time.Sleep(10 * time.Millisecond)
 		mu.Lock()
 		result = append(result, item*2)
@@ -426,7 +426,7 @@ func TestForEachAsyncWithError(t *testing.T) {
 	var mu sync.Mutex
 	var result []int
 
-	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+	err := goiterators.ForEachAsync(iterator, func(item int) error {
 		time.Sleep(10 * time.Millisecond)
 		mu.Lock()
 		result = append(result, item*2)
@@ -499,7 +499,7 @@ func TestForEachAsyncParallelism(t *testing.T) {
 	var result []int
 
 	start := time.Now()
-	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+	err := goiterators.ForEachAsync(iterator, func(item int) error {
 		// Increment concurrent counter
 		current := atomic.AddInt64(&concurrent, 1)
 		if current > atomic.LoadInt64(&maxConcurrent) {

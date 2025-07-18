@@ -351,8 +351,9 @@ func TestForEach(t *testing.T) {
 	iterator := goiterators.NewIteratorFromSlice(data)
 
 	var result []int
-	err := goiterators.ForEach(iterator, func(item int) {
+	err := goiterators.ForEach(iterator, func(item int) error {
 		result = append(result, item*2)
+		return nil
 	})
 
 	expected := []int{2, 4, 6, 8, 10}
@@ -375,8 +376,9 @@ func TestForEachWithError(t *testing.T) {
 
 	iterator := goiterators.NewIteratorErr(next)
 	var result []int
-	err := goiterators.ForEach(iterator, func(item int) {
+	err := goiterators.ForEach(iterator, func(item int) error {
 		result = append(result, item*2)
+		return nil
 	})
 
 	expected := []int{2} // Only first item processed before error
@@ -389,8 +391,9 @@ func TestIForEach(t *testing.T) {
 	iterator := goiterators.NewIteratorFromSlice(data)
 
 	var result []string
-	err := goiterators.IForEach(iterator, func(idx int, item int) {
+	err := goiterators.IForEach(iterator, func(idx int, item int) error {
 		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		return nil
 	})
 
 	expected := []string{"idx:0,val:10", "idx:1,val:20", "idx:2,val:30"}
@@ -413,8 +416,9 @@ func TestIForEachWithError(t *testing.T) {
 
 	iterator := goiterators.NewIteratorErr(next)
 	var result []string
-	err := goiterators.IForEach(iterator, func(idx int, item int) {
+	err := goiterators.IForEach(iterator, func(idx int, item int) error {
 		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		return nil
 	})
 
 	expected := []string{"idx:0,val:1"} // Only first item processed before error

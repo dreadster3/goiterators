@@ -97,16 +97,18 @@ func IFlatMap[T, U any](iter Iterator[T], fn func(int, T) iter.Seq[U]) Iterator[
 }
 
 // ForEach applies the provided function to each item in the iterator
-func ForEach[T any](iter Iterator[T], fn func(T)) error {
-	return IForEach(iter, func(_ int, item T) {
-		fn(item)
+func ForEach[T any](iter Iterator[T], fn func(T) error) error {
+	return IForEach(iter, func(_ int, item T) error {
+		return fn(item)
 	})
 }
 
 // IForEach applies the provided function to each item in the iterator with index
-func IForEach[T any](iter Iterator[T], fn func(int, T)) error {
+func IForEach[T any](iter Iterator[T], fn func(int, T) error) error {
 	for idx, item := range iter.INext {
-		fn(idx, item)
+		if err := fn(idx, item); err != nil {
+			return err
+		}
 	}
 	return iter.Err()
 }

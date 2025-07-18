@@ -193,15 +193,15 @@ func IForEachAsync[T any](iter Iterator[T], fn func(int, T) error) error {
 }
 
 // ForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
-func ForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) error) error {
+func ForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, T) error) error {
 	return IForEachAsyncCtx(ctx, iter, func(ctx context.Context, i int, t T) error {
-		return fn(ctx, i, t)
+		return fn(ctx, t)
 	})
 }
 
 // ForEachAsync applies the function to each item with index in parallel
-func ForEachAsync[T any](iter Iterator[T], fn func(int, T) error) error {
-	return ForEachAsyncCtx(context.Background(), iter, func(_ context.Context, i int, t T) error {
-		return fn(i, t)
+func ForEachAsync[T any](iter Iterator[T], fn func(T) error) error {
+	return ForEachAsyncCtx(context.Background(), iter, func(_ context.Context, t T) error {
+		return fn(t)
 	})
 }

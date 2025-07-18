@@ -16,8 +16,9 @@ func main() {
 	data := []int{1, 2, 3, 4, 5}
 	iter := goiterators.NewIteratorFromSlice(data)
 
-	err := goiterators.ForEach(iter, func(x int) {
+	err := goiterators.ForEach(iter, func(x int) error {
 		fmt.Printf("Value: %d\n", x)
+		return nil
 	})
 	if err != nil {
 		log.Printf("Error in ForEach: %v", err)
@@ -28,8 +29,9 @@ func main() {
 	fruits := []string{"apple", "banana", "cherry", "date"}
 	iter2 := goiterators.NewIteratorFromSlice(fruits)
 
-	err = goiterators.IForEach(iter2, func(idx int, value string) {
+	err = goiterators.IForEach(iter2, func(idx int, value string) error {
 		fmt.Printf("Index %d: %s\n", idx, value)
+		return nil
 	})
 	if err != nil {
 		log.Printf("Error in IForEach: %v", err)
@@ -41,8 +43,9 @@ func main() {
 	iter3 := goiterators.NewIteratorFromSlice(numbers)
 
 	sum := 0
-	err = goiterators.ForEach(iter3, func(x int) {
+	err = goiterators.ForEach(iter3, func(x int) error {
 		sum += x
+		return nil
 	})
 	if err != nil {
 		log.Printf("Error in ForEach: %v", err)
@@ -56,10 +59,10 @@ func main() {
 	iter4 := goiterators.NewIteratorFromSlice(tasks)
 
 	start := time.Now()
-	err = goiterators.ForEachAsync(iter4, func(idx int, task int) error {
+	err = goiterators.ForEachAsync(iter4, func(task int) error {
 		// Simulate work
 		time.Sleep(100 * time.Millisecond)
-		fmt.Printf("Processed task %d at index %d (goroutine)\n", task, idx)
+		fmt.Printf("Processed task %d (goroutine)\n", task)
 		return nil
 	})
 	elapsed := time.Since(start)
@@ -99,8 +102,9 @@ func main() {
 	filtered := goiterators.Filter(iter6, func(x int) bool { return x%2 == 0 })
 	taken := goiterators.Take(filtered, 3)
 
-	err = goiterators.ForEach(taken, func(x int) {
+	err = goiterators.ForEach(taken, func(x int) error {
 		fmt.Printf("Even number: %d\n", x)
+		return nil
 	})
 	if err != nil {
 		log.Printf("Error in chained ForEach: %v", err)
