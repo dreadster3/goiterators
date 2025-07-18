@@ -2,6 +2,7 @@ package goiterators_test
 
 import (
 	"errors"
+	"fmt"
 	"iter"
 	"slices"
 	"sync"
@@ -392,4 +393,146 @@ func TestFlatMapAsync(t *testing.T) {
 	expected := []int{1, 2, 3, 10, 20, 30}
 	assert.Equal(t, expected, result)
 	assert.NoError(t, flatMapped.Err())
+}
+
+func TestForEachAsync(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []int
+
+	// Use ForEachAsync directly
+	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, item*2)
+		mu.Unlock()
+		return nil
+	})
+
+	// Check for errors
+	assert.NoError(t, err)
+
+	slices.Sort(result)
+	expected := []int{2, 4, 6, 8, 10}
+	assert.Equal(t, expected, result)
+}
+
+func TestForEachAsyncWithError(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []int
+
+	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, item*2)
+		mu.Unlock()
+
+		if item == 3 {
+			return errors.New("error at item 3")
+		}
+		return nil
+	})
+
+	assert.Error(t, err)
+	// Results may vary due to parallelism, but should not be empty
+	assert.NotEmpty(t, result)
+}
+
+func TestIForEachAsync(t *testing.T) {
+	data := []int{10, 20, 30}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []string
+
+	err := goiterators.IForEachAsync(iterator, func(idx int, item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		mu.Unlock()
+		return nil
+	})
+
+	slices.Sort(result)
+	expected := []string{"idx:0,val:10", "idx:1,val:20", "idx:2,val:30"}
+	assert.Equal(t, expected, result)
+	assert.NoError(t, err)
+}
+
+func TestIForEachAsyncWithError(t *testing.T) {
+	data := []int{10, 20, 30}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var mu sync.Mutex
+	var result []string
+
+	err := goiterators.IForEachAsync(iterator, func(idx int, item int) error {
+		time.Sleep(10 * time.Millisecond)
+		mu.Lock()
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+		mu.Unlock()
+
+		if idx == 1 {
+			return errors.New("error at index 1")
+		}
+		return nil
+	})
+
+	assert.Error(t, err)
+	// Results may vary due to parallelism, but should not be empty
+	assert.NotEmpty(t, result)
+}
+
+func TestForEachAsyncParallelism(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	// Track concurrent executions
+	var concurrent int64
+	var maxConcurrent int64
+	var mu sync.Mutex
+	var result []int
+
+	start := time.Now()
+	err := goiterators.ForEachAsync(iterator, func(idx int, item int) error {
+		// Increment concurrent counter
+		current := atomic.AddInt64(&concurrent, 1)
+		if current > atomic.LoadInt64(&maxConcurrent) {
+			atomic.StoreInt64(&maxConcurrent, current)
+		}
+
+		// Simulate work
+		time.Sleep(50 * time.Millisecond)
+
+		// Store result
+		mu.Lock()
+		result = append(result, item*2)
+		mu.Unlock()
+
+		// Decrement concurrent counter
+		atomic.AddInt64(&concurrent, -1)
+
+		return nil
+	})
+
+	elapsed := time.Since(start)
+
+	assert.NoError(t, err)
+
+	// Results should be correct
+	slices.Sort(result)
+	expected := []int{2, 4, 6, 8, 10, 12, 14, 16, 18, 20}
+	assert.Equal(t, expected, result)
+
+	// Should have run in parallel (less than sequential time)
+	sequentialTime := time.Duration(len(data)) * 50 * time.Millisecond
+	assert.Less(t, elapsed, sequentialTime, "Expected parallel execution to be faster than sequential")
+
+	// Should have had multiple concurrent executions
+	assert.Greater(t, atomic.LoadInt64(&maxConcurrent), int64(1), "Expected parallel execution")
 }

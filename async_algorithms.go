@@ -3,6 +3,7 @@ package goiterators
 import (
 	"context"
 	"iter"
+	"slices"
 	"sync"
 )
 
@@ -175,11 +176,13 @@ func FlatMapAsyncCtx[T, U any](ctx context.Context, iterator Iterator[T], fn fun
 
 // IForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
 func IForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) error) error {
-	errIterator := processAsync(ctx, iter, func(ctx context.Context, i int, t T, c chan<- Result[error]) {
-		c <- Result[error]{Value: nil, Err: fn(ctx, i, t)}
+	processIterator := processAsync(ctx, iter, func(ctx context.Context, i int, t T, c chan<- Result[struct{}]) {
+		c <- Result[struct{}]{Value: struct{}{}, Err: fn(ctx, i, t)}
 	})
 
-	return errIterator.Err()
+	_ = slices.Collect(processIterator.Next)
+
+	return processIterator.Err()
 }
 
 // IForEachAsync applies the function to each item with index in parallel

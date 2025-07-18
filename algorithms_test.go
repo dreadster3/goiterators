@@ -2,6 +2,7 @@ package goiterators_test
 
 import (
 	"errors"
+	"fmt"
 	"iter"
 	"slices"
 	"testing"
@@ -343,4 +344,80 @@ func TestFlatMapWithError(t *testing.T) {
 	expected := []int{1, 10} // Only first item processed before error
 	assert.Equal(t, expected, result)
 	assert.Error(t, flattened.Err())
+}
+
+func TestForEach(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var result []int
+	err := goiterators.ForEach(iterator, func(item int) {
+		result = append(result, item*2)
+	})
+
+	expected := []int{2, 4, 6, 8, 10}
+	assert.Equal(t, expected, result)
+	assert.NoError(t, err)
+}
+
+func TestForEachWithError(t *testing.T) {
+	next := func(yield func(int, error) bool) {
+		for i := 1; i <= 3; i++ {
+			var err error
+			if i == 2 {
+				err = errors.New("error at 2")
+			}
+			if !yield(i, err) {
+				return
+			}
+		}
+	}
+
+	iterator := goiterators.NewIteratorErr(next)
+	var result []int
+	err := goiterators.ForEach(iterator, func(item int) {
+		result = append(result, item*2)
+	})
+
+	expected := []int{2} // Only first item processed before error
+	assert.Equal(t, expected, result)
+	assert.Error(t, err)
+}
+
+func TestIForEach(t *testing.T) {
+	data := []int{10, 20, 30}
+	iterator := goiterators.NewIteratorFromSlice(data)
+
+	var result []string
+	err := goiterators.IForEach(iterator, func(idx int, item int) {
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+	})
+
+	expected := []string{"idx:0,val:10", "idx:1,val:20", "idx:2,val:30"}
+	assert.Equal(t, expected, result)
+	assert.NoError(t, err)
+}
+
+func TestIForEachWithError(t *testing.T) {
+	next := func(yield func(int, error) bool) {
+		for i := 1; i <= 3; i++ {
+			var err error
+			if i == 2 {
+				err = errors.New("error at 2")
+			}
+			if !yield(i, err) {
+				return
+			}
+		}
+	}
+
+	iterator := goiterators.NewIteratorErr(next)
+	var result []string
+	err := goiterators.IForEach(iterator, func(idx int, item int) {
+		result = append(result, fmt.Sprintf("idx:%d,val:%d", idx, item))
+	})
+
+	expected := []string{"idx:0,val:1"} // Only first item processed before error
+	assert.Equal(t, expected, result)
+	assert.Error(t, err)
 }
