@@ -172,3 +172,33 @@ func FlatMapAsyncCtx[T, U any](ctx context.Context, iterator Iterator[T], fn fun
 		return fn(ctx, t)
 	})
 }
+
+// IForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
+func IForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) error) error {
+	errIterator := processAsync(ctx, iter, func(ctx context.Context, i int, t T, c chan<- Result[error]) {
+		c <- Result[error]{Value: nil, Err: fn(ctx, i, t)}
+	})
+
+	return errIterator.Err()
+}
+
+// IForEachAsync applies the function to each item with index in parallel
+func IForEachAsync[T any](iter Iterator[T], fn func(int, T) error) error {
+	return IForEachAsyncCtx(context.Background(), iter, func(_ context.Context, i int, t T) error {
+		return fn(i, t)
+	})
+}
+
+// ForEachAsyncCtx applies the function to each item with index in parallel with context cancellation
+func ForEachAsyncCtx[T any](ctx context.Context, iter Iterator[T], fn func(context.Context, int, T) error) error {
+	return IForEachAsyncCtx(ctx, iter, func(ctx context.Context, i int, t T) error {
+		return fn(ctx, i, t)
+	})
+}
+
+// ForEachAsync applies the function to each item with index in parallel
+func ForEachAsync[T any](iter Iterator[T], fn func(int, T) error) error {
+	return ForEachAsyncCtx(context.Background(), iter, func(_ context.Context, i int, t T) error {
+		return fn(i, t)
+	})
+}
